@@ -1,4 +1,6 @@
 # Case Study: Help a bike-share company to convert casual riders into annual members
+![1628010650672](https://user-images.githubusercontent.com/61323876/151082008-e62e9c69-3884-4d40-a1ac-9ae465c9389e.png)
+
 In this article i showcase my approach to solve the case study of Google Data Analytics Professional Certificate Capstone Project.
 
 As I learned from the Google Data Analytics program, I will the six phases of the data analysis process: **ask**, **prepare**, **process**, **analyze**, **share and act**.
@@ -30,6 +32,10 @@ The data is under this [license](https://ride.divvybikes.com/data-license-agreem
 
 ### Process
 In this phase, I used R to perform the data cleaning.
+You can check the following files with the details:
+- [Code](https://github.com/FilipeTheAnalyst/Cyclistic-Bike-Share-Company/blob/main/Cyclistic%20Analysis.R)
+- [R Markdown with code and Output](https://github.com/FilipeTheAnalyst/Cyclistic-Bike-Share-Company/blob/main/Cyclistic.Rmd)
+- [R Markdown in word document](https://github.com/FilipeTheAnalyst/Cyclistic-Bike-Share-Company/blob/main/Cyclistic.docx)
 
 ### Analyze, Share and Act
-All these steps were performed using Tableau, it can be acessed [here](https://public.tableau.com/app/profile/filipe7270/viz/Cyclistic_16429571092230/StoryBike-Sharing)
+All these steps were performed using Tableau, it can be accessed [here](https://public.tableau.com/app/profile/filipe7270/viz/Cyclistic_16429571092230/StoryBike-Sharing)
