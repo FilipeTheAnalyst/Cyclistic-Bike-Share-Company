@@ -1,0 +1,160 @@
+---
+title: 'Google Data Analytics Professional Certificate Capstone Project: Cyclistic
+  - Bike-share company'
+author: "Filipe Balseiro"
+date: "23/01/2022"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Case Study: Help a bike-share company to convert casual riders into annual members
+In this article i showcase my approach to solve the case study of Google Data Analytics Professional Certificate Capstone Project.
+
+As I learned from the Google Data Analytics program, I will the six phases of the data analysis process: **ask**, **prepare**, **process**, **analyze**, **share and act**.
+
+### About the Company
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geotracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime.
+
+The director of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore, team wants to understand how casual riders and annual members use Cyclistic bikes differently.
+
+### Business Task
+To answer this problem: **How do annual members and casual riders use Cyclistic bikes differenty?**
+
+### Ask
+Three questions need to be answered:
+
+1. How do annual members and casual riders use Cyclistic bikes differently?
+2. Why would casual riders buy Cyclistic annual memberships?
+3. How can Cyclistic use digital media to influence casual riders to become members?
+
+### Prepare
+In this phase, I collected the data organized in monthly .csv files from this source [here](https://divvy-tripdata.s3.amazonaws.com/index.html). 
+I downloaded the files from 2021 to perform this analysis.
+
+#### Are there issues with bias or credibility in this data?
+The data is from last year and is collected by a bike-share company directly. It includes all rides, so it's not a sample from the whole data. Therefore, it's possible to conclude that there are no credibility and bias issues with this data.
+
+#### How are you addressing licensing, privacy, security, and accessibility?
+The data is under this [license](https://ride.divvybikes.com/data-license-agreement). There are no privacy concerns since the data does not contain personal information. 
+
+### Process
+In this phase I processed the data and get it ready for the next phase where I will look for insights that help me answer to our stakeholders questions and business task.
+I used R to perform this step since the data is too big to merge and process (5.595.063 records).
+
+I started by importing the packages needed to this task.
+
+```{r packages}
+library(tidyverse)  #helps wrangle data
+library(lubridate)  #helps wrangle date attributes
+```
+
+Next, I collected the data from the 12 months of 2021 and combine to a single file.
+```{r collect}
+# Upload Cyclistic 2021 datasets (csv files) here
+
+m01_2021 <- read_csv("202101-divvy-tripdata.csv")
+m02_2021 <- read_csv("202102-divvy-tripdata.csv")
+m03_2021 <- read_csv("202103-divvy-tripdata.csv")
+m04_2021 <- read_csv("202104-divvy-tripdata.csv")
+m05_2021 <- read_csv("202105-divvy-tripdata.csv")
+m06_2021 <- read_csv("202106-divvy-tripdata.csv")
+m07_2021 <- read_csv("202107-divvy-tripdata.csv")
+m08_2021 <- read_csv("202108-divvy-tripdata.csv")
+m09_2021 <- read_csv("202109-divvy-tripdata.csv")
+m10_2021 <- read_csv("202110-divvy-tripdata.csv")
+m11_2021 <- read_csv("202111-divvy-tripdata.csv")
+m12_2021 <- read_csv("202112-divvy-tripdata.csv")
+
+# Stack individual monthly's data frames into one big data frame
+all_trips <- bind_rows(m01_2021, m02_2021, m03_2021, m04_2021,
+                       m05_2021, m06_2021, m07_2021, m08_2021,
+                       m09_2021, m10_2021, m11_2021, m12_2021)
+```
+
+Let's start to observe the number of rows and columns
+```{r summary}
+dim(all_trips)
+```
+
+Let's remove the columns that won't be used in the analysis process: latitude, longitude, start_station_id and end_station_id.
+```{r remove}
+#remove the latitude, longitude, start_station_id and end_station_id as these are not required for analysis
+all_trips <- all_trips %>%
+  select(-c(start_lat, start_lng, end_lat, end_lng, start_station_id, end_station_id))
+```
+
+Next, I renamed the column member_casual to a more suitable name.
+```{r rename}
+#rename column member_casual to rider_type
+all_trips <- all_trips %>%
+  rename(rider_type = member_casual)
+```
+
+I created new columns that list the date, year, month, day and start hour of each ride.
+```{r add_columns}
+all_trips$date <- as.Date(all_trips$started_at) #The default format is yyyy-mm-dd
+all_trips$month <- format(as.Date(all_trips$date), "%m")
+all_trips$day <- format(as.Date(all_trips$date), "%d")
+all_trips$year <- format(as.Date(all_trips$date), "%Y")
+all_trips$day_of_week <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", 
+                           "Friday", "Saturday")[as.POSIXlt(all_trips$date)$wday + 1]
+all_trips$hour_of_day <- format(as.POSIXct(all_trips$started_at), format = "%H")
+```
+
+Added a new column called ride_length to calculate each trip (in minutes).
+```{r ride_length}
+all_trips$ride_length <- difftime(all_trips$ended_at,all_trips$started_at, units = "mins")
+```
+
+I sorted the dataset based on ride_length to check if there any errors, like negative values.
+```{r sort}
+# sort the dataset based on ride_length value to check if there are any errors
+all_trips %>%
+  arrange(ride_length) %>%
+  select(ride_id, started_at, ended_at, ride_length) %>%
+  filter(ride_length < 0)
+```
+
+The wrong data was removed from the dataset.
+```{r remove_data}
+all_trips_v2 <- all_trips[!(all_trips$ride_length<0),]
+nrow(all_trips_v2)
+```
+
+As we can see below dataset as a considerable amount of NA values in **start_station_name** and **end_station_name** columns. 
+```{r check_na}
+# check for NA values in start_station_name and end_station_name columns
+all_trips_v2 %>% 
+  group_by(start_station_name) %>%
+  summarise(number_of_rides = n()) %>%
+  arrange(-number_of_rides)
+
+all_trips_v2 %>% 
+  group_by(end_station_name) %>%
+  summarise(number_of_rides = n()) %>%
+  arrange(-number_of_rides)
+```
+
+Instead of removing the records with NA values, I assigned all NA values as "Missing Data" so that I can analyze missing values as well.
+```{r replace_na}
+# replace NA values in start_station_name and end_station_name columns with Missing Data values
+all_trips_v2$start_station_name <-
+  replace(all_trips_v2$start_station_name, is.na(all_trips_v2$start_station_name), "Missing Data")
+all_trips_v2$end_station_name <-
+  replace(all_trips_v2$end_station_name, is.na(all_trips_v2$end_station_name), "Missing Data")
+```
+
+Finally I exported the dataset as a csv file to analyze in Tableau.
+```{r write_csv}
+# Create a csv file that we will visualize in Tableau
+counts <- write.csv(all_trips_v2, file = 'all_trips.csv')
+```
+
+### Tableau Dashboard
+[Link](https://public.tableau.com/app/profile/filipe7270/viz/Cyclistic_16429571092230/StoryBike-Sharing)
